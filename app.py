@@ -11,15 +11,21 @@ def headers():
     return {
         "apikey": SUPABASE_KEY,
         "Authorization": f"Bearer {SUPABASE_KEY}",
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
+        "Prefer": "return=minimal"
     }
 
 @app.route("/")
 def index():
     if not SUPABASE_URL or not SUPABASE_KEY:
-        return "<h2>❌ Faltan las variables de entorno SUPABASE_URL y SUPABASE_KEY en Render.</h2>", 500
+        return "<h2>❌ Faltan SUPABASE_URL y SUPABASE_KEY en las variables de entorno de Render.</h2>", 500
+
     r = requests.get(f"{SUPABASE_URL}/rest/v1/items?select=*", headers=headers())
-    items = r.json() if r.ok else []
+
+    if not r.ok:
+        return f"<h2>❌ Error de Supabase ({r.status_code}):</h2><pre>{r.text}</pre>", 500
+
+    items = r.json() if r.text else []
     return render_template("index.html", items=items)
 
 @app.route("/add", methods=["POST"])
