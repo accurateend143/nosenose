@@ -4,8 +4,8 @@ from flask import Flask, render_template, request, redirect, url_for
 
 app = Flask(__name__)
 
-SUPABASE_URL = os.environ.get("SUPABASE_URL")
-SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+SUPABASE_URL = os.environ.get("SUPABASE_URL", "").rstrip("/")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY", "")
 
 def headers():
     return {
@@ -16,8 +16,10 @@ def headers():
 
 @app.route("/")
 def index():
+    if not SUPABASE_URL or not SUPABASE_KEY:
+        return "<h2>❌ Faltan las variables de entorno SUPABASE_URL y SUPABASE_KEY en Render.</h2>", 500
     r = requests.get(f"{SUPABASE_URL}/rest/v1/items?select=*", headers=headers())
-    items = r.json()
+    items = r.json() if r.ok else []
     return render_template("index.html", items=items)
 
 @app.route("/add", methods=["POST"])
@@ -42,4 +44,3 @@ def edit(item_id):
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port)
-
